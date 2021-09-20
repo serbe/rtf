@@ -7,7 +7,14 @@ const App = () => {
   const [socketUrl, setSocketUrl] = useState("ws://127.0.0.1:8080");
   const messageHistory = useRef<MessageEvent<any>[]>([]);
 
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
+  const { sendMessage, lastMessage, readyState, sendJsonMessage } = useWebSocket(socketUrl, {
+    onOpen: () => console.log("opened"),
+    //Will attempt to reconnect on all close events, such as server shutting down
+    shouldReconnect: (closeEvent) => {
+      console.log(closeEvent);
+      return true;
+    },
+  });
 
   messageHistory.current = useMemo(
     () => (lastMessage ? messageHistory.current.concat(lastMessage) : messageHistory.current),
@@ -16,7 +23,7 @@ const App = () => {
 
   const handleClickChangeSocketUrl = useCallback(() => setSocketUrl("ws://127.0.0.1:8080"), []);
 
-  const handleClickSendMessage = useCallback(() => sendMessage("Hello"), []);
+  const handleClickSendMessage = useCallback(() => sendMessage("Hello"), [sendMessage]);
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: "Connecting",
