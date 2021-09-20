@@ -1,11 +1,17 @@
 import './App.css';
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { useAuthState } from './services/auth';
+import { checkStorage } from './services/storage';
 
 const App = () => {
   const [socketUrl, setSocketUrl] = useState("ws://127.0.0.1:8080");
   const messageHistory = useRef<MessageEvent<any>[]>([]);
+
+  const { setAuth } = useAuthState();
+  const [checker, setChecker] = useState(false);
+  const [login, setLogin] = useState(false);
 
   const { sendMessage, lastMessage, readyState, sendJsonMessage } = useWebSocket(socketUrl, {
     onOpen: () => console.log("opened"),
@@ -15,6 +21,12 @@ const App = () => {
       return true;
     },
   });
+
+  useEffect(() => {
+    checkStorage(sendJsonMessage);
+    // h2.connect('http://127.0.0.1/go/check');
+  }, []);
+
 
   messageHistory.current = useMemo(
     () => (lastMessage ? messageHistory.current.concat(lastMessage) : messageHistory.current),

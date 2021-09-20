@@ -1,28 +1,29 @@
 import React, {
-    createContext,
-    Dispatch,
-    ReactElement,
-    ReactNode,
-    SetStateAction,
-    useContext,
-    useReducer,
-} from 'react';
+  createContext,
+  Dispatch,
+  ReactElement,
+  ReactNode,
+  // SetStateAction,
+  useContext,
+  useReducer,
+} from "react";
+import { SendJsonMessage } from "react-use-websocket/dist/lib/types";
 
-import { User } from '../models/user';
-import { clearStorage, getStorage, setStorage } from './storage';
+import { User } from "../models/user";
+import { clearStorage, getStorage, setStorage } from "./storage";
 
-const loginURL = process.env.REACT_APP_LOGINURL || "/go/login";
-const checkURL = process.env.REACT_APP_CHECKURL || "/go/check";
+// const loginURL = process.env.REACT_APP_LOGINURL || "/go/login";
+// const checkURL = process.env.REACT_APP_CHECKURL || "/go/check";
+
+export interface CheckResponse {
+  r: boolean;
+}
 
 export type AuthState = {
   user: User;
   login: boolean;
   check: boolean;
 };
-
-export interface CJson {
-  r: boolean;
-}
 
 const initialAuthState: AuthState = {
   user: { role: 0, name: "", token: "" },
@@ -53,7 +54,7 @@ interface SetAuthState {
   dispatch: Dispatch<ReducerActions>;
 }
 
-interface TJson {
+export interface LoginResponse {
   t: string;
   r: number;
 }
@@ -64,47 +65,38 @@ const initialSetAuthState: SetAuthState = {
   },
 };
 
-export const login = (name: string, pass: string, setAuth: Dispatch<ReducerActions>): void => {
-  axios
-    .post<TJson>(
-      loginURL,
-      { u: name, p: btoa(pass) },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    )
-    .then((jsonData) => {
-      setAuth({
-        type: "SetAuth",
-        data: {
-          user: {
-            role: jsonData.data.r,
-            name,
-            token: jsonData.data.t,
-          },
-          check: true,
-          login: true,
-        },
-      });
-    });
+export const login = (
+  name: string,
+  pass: string,
+  sendJsonMessage: SendJsonMessage
+): void => {
+  sendJsonMessage({ u: name, p: btoa(pass) });
 };
 
-export const check = (token: string, role: string): void => {
-  axios
-    .post<CJson>(
-      checkURL,
-      { t: token, r: role },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    )
-    .then((jsonData) => {
-      return jsonData.data.r;
-    });
+export const getLoginResponse = (
+  setAuth: Dispatch<ReducerActions>,
+  user: User
+): void => {
+  setAuth({
+    type: "SetAuth",
+    data: {
+      user: user,
+      check: true,
+      login: true,
+    },
+  });
+};
+
+export const check = (
+  token: string,
+  role: string,
+  sendJsonMessage: SendJsonMessage
+): void => {
+  sendJsonMessage({ t: token, r: role });
+};
+
+export const getCheckResponse = (response: CheckResponse): boolean => {
+  return response.r;
 };
 
 export const logout = (): void => {
@@ -119,7 +111,10 @@ interface AuthProviderProperties {
   children: ReactNode;
 }
 
-export const reducer = (authState: AuthState, action: ReducerActions): AuthState => {
+export const reducer = (
+  authState: AuthState,
+  action: ReducerActions
+): AuthState => {
   switch (action.type) {
     case "SetAuth": {
       setStorage(action.data.user);
@@ -161,7 +156,9 @@ export const reducer = (authState: AuthState, action: ReducerActions): AuthState
   }
 };
 
-export const AuthProvider = (properties: AuthProviderProperties): ReactElement => {
+export const AuthProvider = (
+  properties: AuthProviderProperties
+): ReactElement => {
   const { children } = properties;
 
   const user = getStorage();
@@ -185,7 +182,9 @@ export const AuthProvider = (properties: AuthProviderProperties): ReactElement =
 
   return (
     <AuthContext.Provider value={state}>
-      <SetAuthContext.Provider value={setState}>{children}</SetAuthContext.Provider>
+      <SetAuthContext.Provider value={setState}>
+        {children}
+      </SetAuthContext.Provider>
     </AuthContext.Provider>
   );
 };

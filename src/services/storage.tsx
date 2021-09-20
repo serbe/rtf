@@ -1,7 +1,8 @@
-import { Dispatch, SetStateAction } from 'react';
-import { SendJsonMessage } from 'react-use-websocket/dist/lib/types';
+import { Dispatch, SetStateAction } from "react";
+import { SendJsonMessage } from "react-use-websocket/dist/lib/types";
 
-import { User } from '../models/user';
+import { User } from "../models/user";
+import { CheckResponse } from "./auth";
 
 export const getStorage = (): User => {
   const userStorage: string | null = localStorage.getItem("user");
@@ -25,22 +26,22 @@ export const clearStorage = (): void => {
   localStorage.removeItem("user");
 };
 
-export const checkStorage = (
-  setChecker: Dispatch<SetStateAction<boolean>>,
-  setLogin: Dispatch<SetStateAction<boolean>>,
-  sendJsonMessage: SendJsonMessage
-): void => {
+export const checkStorage = (sendJsonMessage: SendJsonMessage): void => {
   const user = getStorage();
 
   sendJsonMessage(`{ "t": "${user.token}", "r": ${user.role} }`);
 };
 
-// .then((jsonData) => {
-//   if (jsonData.data.r) {
-//     setLogin(true);
-//     setChecker(true);
-//   } else {
-//     setLogin(false);
-//     setChecker(true);
-//   }
-// });
+const checkStorageResponse = (
+  setChecker: Dispatch<SetStateAction<boolean>>,
+  setLogin: Dispatch<SetStateAction<boolean>>,
+  response: CheckResponse
+): void => {
+  if (response.r) {
+    setLogin(true);
+    setChecker(true);
+  } else {
+    setLogin(false);
+    setChecker(true);
+  }
+};
